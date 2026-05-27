@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Gerador de Cupons</title>
+<style>
+  @page { size: A4 portrait; margin: 10mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cor-principal: #2b3a8a;
+    --cor-destaque: #e63946;
+    --cor-acento: #2b78c2;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #e9ecef;
+    color: #333;
+  }
+
+  /* PAINEL DE EDIÇÃO */
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+  .painel {
+    background: white;
+    padding: 18px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 20px;
+    height: fit-content;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+  }
+
+  .painel h2 {
+    font-size: 16pt;
+    color: var(--cor-principal);
+    margin-bottom: 12px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 8px;
+  }
+
+  .painel h3 {
+    font-size: 10pt;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 16px 0 6px;
+  }
+
+  .grupo { margin-bottom: 10px; }
+
+  .grupo label {
+    display: block;
+    font-size: 9pt;
+    color: #555;
+    margin-bottom: 3px;
+    font-weight: 600;
+  }
+
+  .grupo input[type="text"],
+  .grupo input[type="date"],
+  .grupo textarea,
+  .grupo select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 10pt;
+  }
+
+  .grupo textarea { resize: vertical; min-height: 50px; }
+
+  .grupo input[type="color"] {
+    width: 50px;
+    height: 32px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .grupo input[type="file"] { font-size: 9pt; width: 100%; }
+
+  .cor-linha { display: flex; gap: 10px; align-items: center; }
+  .cor-linha label { margin: 0; }
+
+  .botoes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 14px;
+  }
+
+  .botoes button {
+    padding: 9px;
+    border: none;
+    border-radius: 4px;
+    font-size: 9.5pt;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .botoes button:hover { opacity: 0.85; }
+
+  .btn-imprimir { background: var(--cor-principal); color: white; grid-column: span 2; }
+  .btn-salvar { background: #28a745; color: white; }
+  .btn-carregar { background: #17a2b8; color: white; }
+  .btn-resetar { background: #6c757d; color: white; grid-column: span 2; font-size: 9pt; }
+
+  .hint {
+    font-size: 8.5pt;
+    color: #888;
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+
+  /* PREVIEW / IMPRESSÃO */
+  .preview {
+    background: white;
+    padding: 15mm 10mm;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+  }
+
+  .pagina {
+    display: flex;
+    flex-direction: column;
+    gap: 2mm;
+  }
+
+  .cupom {
+    width: 100%;
+    border: 1.5px solid var(--cor-principal);
+    display: flex;
+    overflow: hidden;
+    background: white;
+    position: relative;
+  }
+
+  /* Altura ajustada conforme quantidade — controlada via classe */
+  .pagina.qtd-4 .cupom { height: 64mm; }
+  .pagina.qtd-5 .cupom { height: 52mm; }
+  .pagina.qtd-6 .cupom { height: 43mm; }
+
+  .canhoto {
+    width: 32%;
+    padding: 5mm 4mm;
+    border-right: 2px dashed var(--cor-principal);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3.5mm;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(255, 220, 0, 0.04),
+        rgba(255, 220, 0, 0.04) 6px,
+        transparent 6px,
+        transparent 14px
+      );
+  }
+
+  .campo {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    font-size: 11pt;
+    color: var(--cor-principal);
+    font-weight: 600;
+  }
+
+  .campo .linha {
+    flex: 1;
+    border-bottom: 1.5px solid var(--cor-principal);
+    height: 14px;
+  }
+
+  .info {
+    flex: 1;
+    padding: 4mm 5mm;
+    position: relative;
+    background: var(--fundo-info, radial-gradient(circle at top right, #fff4d6 0%, transparent 45%), radial-gradient(circle at bottom left, #ffe6e6 0%, transparent 45%), white);
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* camada branca translúcida sobre imagem para garantir legibilidade */
+  .info.com-imagem::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.78);
+    z-index: 0;
+  }
+  .info.com-imagem .cabecalho,
+  .info.com-imagem .corpo,
+  .info.com-imagem .versiculo { position: relative; z-index: 1; }
+
+  .estrela-tr, .estrela-bl {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .estrela-tr {
+    top: 3mm; right: 4mm;
+    color: #ffc107;
+    font-size: 16pt;
+    opacity: 0.5;
+  }
+  .estrela-bl {
+    bottom: 3mm; left: 4mm;
+    color: var(--cor-destaque);
+    font-size: 12pt;
+    opacity: 0.4;
+  }
+
+  .cabecalho { text-align: center; line-height: 1; margin-bottom: 1mm; }
+
+  .titulo {
+    font-family: 'Comic Sans MS', 'Segoe Script', cursive;
+    font-size: 15pt;
+    color: var(--cor-destaque);
+    font-weight: bold;
+    font-style: italic;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.06);
+  }
+
+  .subtitulo {
+    font-family: 'Comic Sans MS', 'Segoe Script', cursive;
+    font-size: 10pt;
+    color: var(--cor-acento);
+    font-style: italic;
+    margin-top: 1mm;
+  }
+
+  .corpo {
+    display: flex;
+    gap: 4mm;
+    align-items: center;
+    flex: 1;
+    margin-top: 1mm;
+  }
+
+  .imagens {
+    display: flex;
+    gap: 2mm;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .imagens img {
+    height: 22mm;
+    width: auto;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+
+  .imagens img.principal { height: 24mm; }
+  .imagens img.unica { height: 28mm; }
+  .imagens img:not([src]), .imagens img[src=""] { display: none; }
+
+  .dados {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2mm;
+    font-size: 9.5pt;
+    color: #333;
+  }
+
+  .linha-dado {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.15;
+  }
+
+  .icone {
+    font-size: 11pt;
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+  }
+
+  .linha-dado strong { color: var(--cor-principal); }
+
+  .preco {
+    color: var(--cor-destaque);
+    font-weight: bold;
+    font-size: 11pt;
+  }
+
+  .versiculo {
+    font-style: italic;
+    font-size: 7.5pt;
+    color: #555;
+    text-align: center;
+    margin-top: 1.5mm;
+    line-height: 1.25;
+    border-top: 1px dotted #bbb;
+    padding-top: 1mm;
+    flex-shrink: 0;
+  }
+
+  .versiculo.escondido { display: none; }
+
+  /* IMPRESSÃO */
+  @media print {
+    body { background: white; }
+    .layout { display: block; padding: 0; }
+    .painel { display: none; }
+    .preview {
+      box-shadow: none;
+      padding: 0;
+      width: 100%;
+      min-height: auto;
+    }
+    .cupom { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- PAINEL DE EDIÇÃO -->
+  <aside class="painel">
+    <h2>📝 Gerador de Cupons</h2>
+
+    <h3>Textos do cupom</h3>
+    <div class="grupo">
+      <label>Título</label>
+      <input type="text" id="titulo" value="Departamento Infantil">
+    </div>
+    <div class="grupo">
+      <label>Subtítulo</label>
+      <input type="text" id="subtitulo" value="Adoradores Kids">
+    </div>
+    <div class="grupo">
+      <label>Prêmio</label>
+      <input type="text" id="premio" value="Chaleira Elétrica 1,7L">
+    </div>
+    <div class="grupo">
+      <label>Data do sorteio</label>
+      <input type="text" id="data" value="21/06/2026">
+    </div>
+    <div class="grupo">
+      <label>Local</label>
+      <input type="text" id="local" value="Ig. Ass. de Deus 4 de Outubro">
+    </div>
+    <div class="grupo">
+      <label>Valor</label>
+      <input type="text" id="valor" value="R$ 2,00">
+    </div>
+
+    <h3>Rodapé</h3>
+    <div class="grupo">
+      <label>Versículo / frase (deixe vazio para esconder)</label>
+      <textarea id="versiculo">"Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14</textarea>
+    </div>
+
+    <h3>Imagens do prêmio</h3>
+    <div class="grupo">
+      <label>Imagem 1</label>
+      <input type="file" id="img1" accept="image/*">
+    </div>
+    <div class="grupo">
+      <label>Imagem 2 (opcional)</label>
+      <input type="file" id="img2" accept="image/*">
+    </div>
+
+    <h3>Aparência</h3>
+    <div class="grupo cor-linha">
+      <input type="color" id="cor" value="#2b3a8a">
+      <label>Cor principal</label>
+    </div>
+
+    <div class="grupo">
+      <label>Fundo do cupom</label>
+      <select id="fundoTipo">
+        <option value="padrao" selected>Padrão (amarelo+rosa suave)</option>
+        <option value="branco">Branco limpo</option>
+        <option value="listrado">Listrado pastel</option>
+        <option value="azul">Gradiente azul</option>
+        <option value="amarelo">Gradiente amarelo</option>
+        <option value="rosa">Gradiente rosa</option>
+        <option value="verde">Gradiente verde</option>
+        <option value="solido">Cor sólida (escolha abaixo)</option>
+        <option value="imagem">Imagem (upload abaixo)</option>
+      </select>
+    </div>
+    <div class="grupo cor-linha">
+      <input type="color" id="fundoCor" value="#fff4d6">
+      <label>Cor sólida (quando opção "Cor sólida")</label>
+    </div>
+    <div class="grupo">
+      <label>Imagem de fundo (quando opção "Imagem")</label>
+      <input type="file" id="fundoImg" accept="image/*">
+    </div>
+    <div class="grupo">
+      <label>Cupons por folha</label>
+      <select id="qtd">
+        <option value="4">4 cupons (maiores)</option>
+        <option value="5" selected>5 cupons (recomendado)</option>
+        <option value="6">6 cupons (menores)</option>
+      </select>
+    </div>
+
+    <div class="botoes">
+      <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir / PDF</button>
+      <button class="btn-salvar" onclick="salvar()">💾 Salvar</button>
+      <button class="btn-carregar" onclick="carregar()">📂 Carregar</button>
+      <button class="btn-resetar" onclick="resetar()">🔄 Resetar tudo</button>
+    </div>
+
+    <p class="hint">
+      Ao imprimir, o painel some e só a folha de cupons aparece.
+      Marque "Gráficos de plano de fundo" nas opções de impressão para sair com as cores.
+    </p>
+  </aside>
+
+  <!-- PREVIEW -->
+  <main class="preview">
+    <div class="pagina qtd-5" id="pagina"></div>
+  </main>
+</div>
+
+<script>
+  const campos = ['titulo','subtitulo','premio','data','local','valor','versiculo','cor','qtd','fundoTipo','fundoCor'];
+  const estado = {
+    titulo: 'Departamento Infantil',
+    subtitulo: 'Adoradores Kids',
+    premio: 'Chaleira Elétrica 1,7L',
+    data: '21/06/2026',
+    local: 'Ig. Ass. de Deus 4 de Outubro',
+    valor: 'R$ 2,00',
+    versiculo: '"Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14',
+    cor: '#2b3a8a',
+    qtd: '5',
+    img1: '',
+    img2: '',
+    fundoTipo: 'padrao',
+    fundoCor: '#fff4d6',
+    fundoImg: ''
+  };
+
+  const FUNDOS = {
+    padrao: 'radial-gradient(circle at top right, #fff4d6 0%, transparent 45%), radial-gradient(circle at bottom left, #ffe6e6 0%, transparent 45%), white',
+    branco: 'white',
+    listrado: 'repeating-linear-gradient(45deg, #fff8e1, #fff8e1 8px, #ffffff 8px, #ffffff 16px)',
+    azul: 'linear-gradient(135deg, #d6ecff 0%, #ffffff 70%)',
+    amarelo: 'linear-gradient(135deg, #fff4c2 0%, #ffffff 70%)',
+    rosa: 'linear-gradient(135deg, #ffd6e0 0%, #ffffff 70%)',
+    verde: 'linear-gradient(135deg, #d6f5d6 0%, #ffffff 70%)'
+  };
+
+  function ajustarCorVariantes(hex) {
+    document.documentElement.style.setProperty('--cor-principal', hex);
+  }
+
+  function aplicarFundo() {
+    let fundo;
+    if (estado.fundoTipo === 'solido') {
+      fundo = estado.fundoCor;
+    } else if (estado.fundoTipo === 'imagem' && estado.fundoImg) {
+      fundo = `url("${estado.fundoImg}") center/cover no-repeat`;
+    } else {
+      fundo = FUNDOS[estado.fundoTipo] || FUNDOS.padrao;
+    }
+    document.documentElement.style.setProperty('--fundo-info', fundo);
+  }
+
+  function montarCupom() {
+    const versiculoHtml = estado.versiculo.trim()
+      ? `<div class="versiculo">${escapar(estado.versiculo)}</div>`
+      : '';
+
+    const img1 = estado.img1 ? `<img src="${estado.img1}" class="principal" alt="Prêmio">` : '';
+    const img2 = estado.img2 ? `<img src="${estado.img2}" alt="Prêmio">` : '';
+    const ehUnica = estado.img1 && !estado.img2;
+    const img1Class = ehUnica ? 'unica' : 'principal';
+    const img1Tag = estado.img1 ? `<img src="${estado.img1}" class="${img1Class}" alt="Prêmio">` : '';
+
+    return `
+      <div class="cupom">
+        <div class="canhoto">
+          <div class="campo">Nome:<span class="linha"></span></div>
+          <div class="campo">Telefone:<span class="linha"></span></div>
+          <div class="campo">Vendedor:<span class="linha"></span></div>
+        </div>
+        <div class="info ${estado.fundoTipo === 'imagem' && estado.fundoImg ? 'com-imagem' : ''}">
+          <span class="estrela-tr">★</span>
+          <span class="estrela-bl">★</span>
+          <div class="cabecalho">
+            <div class="titulo">${escapar(estado.titulo)}</div>
+            ${estado.subtitulo.trim() ? `<div class="subtitulo">${escapar(estado.subtitulo)}</div>` : ''}
+          </div>
+          <div class="corpo">
+            <div class="imagens">
+              ${img1Tag}
+              ${img2}
+            </div>
+            <div class="dados">
+              <div class="linha-dado"><span class="icone">🏆</span><span><strong>Prêmio:</strong> ${escapar(estado.premio)}</span></div>
+              <div class="linha-dado"><span class="icone">📅</span><span><strong>Sorteio:</strong> ${escapar(estado.data)}</span></div>
+              <div class="linha-dado"><span class="icone">⛪</span><span><strong>Local:</strong> ${escapar(estado.local)}</span></div>
+              <div class="linha-dado"><span class="icone">💰</span><span class="preco"><strong>Valor:</strong> ${escapar(estado.valor)}</span></div>
+            </div>
+          </div>
+          ${versiculoHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  function escapar(txt) {
+    return String(txt)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderizar() {
+    const pagina = document.getElementById('pagina');
+    pagina.className = `pagina qtd-${estado.qtd}`;
+    const qtd = parseInt(estado.qtd, 10);
+    pagina.innerHTML = montarCupom().repeat(qtd);
+    ajustarCorVariantes(estado.cor);
+    aplicarFundo();
+  }
+
+  function aoMudar(id) {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => {
+      estado[id] = el.value;
+      renderizar();
+    });
+  }
+
+  function lerImagem(inputId, estadoKey) {
+    document.getElementById(inputId).addEventListener('change', (ev) => {
+      const arquivo = ev.target.files[0];
+      if (!arquivo) {
+        estado[estadoKey] = '';
+        renderizar();
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        estado[estadoKey] = e.target.result;
+        renderizar();
+      };
+      reader.readAsDataURL(arquivo);
+    });
+  }
+
+  function salvar() {
+    localStorage.setItem('cupom-config', JSON.stringify(estado));
+    alert('Configuração salva no navegador.');
+  }
+
+  function carregar() {
+    const dados = localStorage.getItem('cupom-config');
+    if (!dados) {
+      alert('Nenhuma configuração salva ainda.');
+      return;
+    }
+    Object.assign(estado, JSON.parse(dados));
+    campos.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = estado[id];
+    });
+    renderizar();
+    alert('Configuração carregada.');
+  }
+
+  function resetar() {
+    if (!confirm('Apagar tudo e voltar ao padrão?')) return;
+    localStorage.removeItem('cupom-config');
+    location.reload();
+  }
+
+  campos.forEach(aoMudar);
+  lerImagem('img1', 'img1');
+  lerImagem('img2', 'img2');
+  lerImagem('fundoImg', 'fundoImg');
+
+  // tenta carregar config salva ao abrir
+  const dadosSalvos = localStorage.getItem('cupom-config');
+  if (dadosSalvos) {
+    try {
+      Object.assign(estado, JSON.parse(dadosSalvos));
+      campos.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && estado[id] !== undefined) el.value = estado[id];
+      });
+    } catch(e) { /* ignora config corrompida */ }
+  }
+
+  renderizar();
+</script>
+
+</body>
+</html>

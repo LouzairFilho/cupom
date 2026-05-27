@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Cupom - Departamento Infantil</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f0f0;
+    padding: 20px;
+  }
+
+  .pagina {
+    width: 190mm;
+    margin: 0 auto;
+    background: white;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2mm;
+  }
+
+  .cupom {
+    width: 100%;
+    height: 52mm;
+    border: 2px solid #2b3a8a;
+    display: flex;
+    overflow: hidden;
+    background: white;
+    position: relative;
+  }
+
+  /* CANHOTO (esquerda) */
+  .canhoto {
+    width: 32%;
+    padding: 5mm 4mm;
+    border-right: 2px dashed #2b3a8a;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3.5mm;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(255, 220, 0, 0.04),
+        rgba(255, 220, 0, 0.04) 6px,
+        transparent 6px,
+        transparent 14px
+      );
+  }
+
+  .campo {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    font-size: 11pt;
+    color: #2b3a8a;
+    font-weight: 600;
+  }
+
+  .campo .linha {
+    flex: 1;
+    border-bottom: 1.5px solid #2b3a8a;
+    height: 14px;
+  }
+
+  /* CUPOM (direita) */
+  .info {
+    flex: 1;
+    padding: 4mm 5mm;
+    position: relative;
+    background:
+      radial-gradient(circle at top right, #fff4d6 0%, transparent 45%),
+      radial-gradient(circle at bottom left, #ffe6e6 0%, transparent 45%),
+      white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* decorações - estrelas e bolhas */
+  .info::before {
+    content: '★';
+    position: absolute;
+    top: 3mm;
+    right: 4mm;
+    color: #ffc107;
+    font-size: 16pt;
+    opacity: 0.5;
+  }
+  .info::after {
+    content: '★';
+    position: absolute;
+    bottom: 3mm;
+    left: 4mm;
+    color: #e74c3c;
+    font-size: 12pt;
+    opacity: 0.4;
+  }
+
+  .cabecalho {
+    text-align: center;
+    line-height: 1;
+    margin-bottom: 1mm;
+  }
+
+  .titulo {
+    font-family: 'Comic Sans MS', 'Segoe Script', cursive;
+    font-size: 15pt;
+    color: #e63946;
+    font-weight: bold;
+    font-style: italic;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.06);
+  }
+
+  .subtitulo {
+    font-family: 'Comic Sans MS', 'Segoe Script', cursive;
+    font-size: 10pt;
+    color: #2b78c2;
+    font-style: italic;
+    margin-top: 1mm;
+  }
+
+  .corpo {
+    display: flex;
+    gap: 4mm;
+    align-items: center;
+    flex: 1;
+    margin-top: 1mm;
+  }
+
+  .imagens {
+    display: flex;
+    gap: 2mm;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .imagens img {
+    height: 22mm;
+    width: auto;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+
+  .imagens img.principal { height: 24mm; }
+
+  .dados {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2mm;
+    font-size: 9.5pt;
+    color: #333;
+  }
+
+  .linha-dado {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.15;
+  }
+
+  .icone {
+    font-size: 11pt;
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+  }
+
+  .linha-dado strong {
+    color: #2b3a8a;
+  }
+
+  .preco {
+    color: #e63946;
+    font-weight: bold;
+    font-size: 11pt;
+  }
+
+  .versiculo {
+    font-style: italic;
+    font-size: 7.5pt;
+    color: #555;
+    text-align: center;
+    margin-top: 1.5mm;
+    line-height: 1.25;
+    border-top: 1px dotted #bbb;
+    padding-top: 1mm;
+    flex-shrink: 0;
+  }
+
+  /* IMPRESSÃO */
+  @media print {
+    body { background: white; padding: 0; }
+    .pagina {
+      width: 100%;
+      margin: 0;
+      gap: 2mm;
+    }
+    .cupom {
+      page-break-inside: avoid;
+      box-shadow: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="pagina">
+
+  <!-- Modelo de cupom repetido 6 vezes -->
+  <div class="cupom">
+    <div class="canhoto">
+      <div class="campo">Nome:<span class="linha"></span></div>
+      <div class="campo">Telefone:<span class="linha"></span></div>
+      <div class="campo">Vendedor:<span class="linha"></span></div>
+    </div>
+    <div class="info">
+      <div class="cabecalho">
+        <div class="titulo">Departamento Infantil</div>
+        <div class="subtitulo">Adoradores Kids</div>
+      </div>
+      <div class="corpo">
+        <div class="imagens">
+          <img src="premio1.webp" alt="Chaleira" class="principal">
+          <img src="premio2.webp" alt="Caixa">
+        </div>
+        <div class="dados">
+          <div class="linha-dado"><span class="icone">🏆</span><span><strong>Prêmio:</strong> Chaleira Elétrica 1,7L</span></div>
+          <div class="linha-dado"><span class="icone">📅</span><span><strong>Sorteio:</strong> 21/06/2026</span></div>
+          <div class="linha-dado"><span class="icone">⛪</span><span><strong>Local:</strong> Ig. Ass. de Deus 4 de Outubro</span></div>
+          <div class="linha-dado"><span class="icone">💰</span><span class="preco"><strong>Valor:</strong> R$ 2,00</span></div>
+        </div>
+      </div>
+      <div class="versiculo">
+        "Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14
+      </div>
+    </div>
+  </div>
+
+  <div class="cupom">
+    <div class="canhoto">
+      <div class="campo">Nome:<span class="linha"></span></div>
+      <div class="campo">Telefone:<span class="linha"></span></div>
+      <div class="campo">Vendedor:<span class="linha"></span></div>
+    </div>
+    <div class="info">
+      <div class="cabecalho">
+        <div class="titulo">Departamento Infantil</div>
+        <div class="subtitulo">Adoradores Kids</div>
+      </div>
+      <div class="corpo">
+        <div class="imagens">
+          <img src="premio1.webp" alt="Chaleira" class="principal">
+          <img src="premio2.webp" alt="Caixa">
+        </div>
+        <div class="dados">
+          <div class="linha-dado"><span class="icone">🏆</span><span><strong>Prêmio:</strong> Chaleira Elétrica 1,7L</span></div>
+          <div class="linha-dado"><span class="icone">📅</span><span><strong>Sorteio:</strong> 21/06/2026</span></div>
+          <div class="linha-dado"><span class="icone">⛪</span><span><strong>Local:</strong> Ig. Ass. de Deus 4 de Outubro</span></div>
+          <div class="linha-dado"><span class="icone">💰</span><span class="preco"><strong>Valor:</strong> R$ 2,00</span></div>
+        </div>
+      </div>
+      <div class="versiculo">
+        "Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14
+      </div>
+    </div>
+  </div>
+
+  <div class="cupom">
+    <div class="canhoto">
+      <div class="campo">Nome:<span class="linha"></span></div>
+      <div class="campo">Telefone:<span class="linha"></span></div>
+      <div class="campo">Vendedor:<span class="linha"></span></div>
+    </div>
+    <div class="info">
+      <div class="cabecalho">
+        <div class="titulo">Departamento Infantil</div>
+        <div class="subtitulo">Adoradores Kids</div>
+      </div>
+      <div class="corpo">
+        <div class="imagens">
+          <img src="premio1.webp" alt="Chaleira" class="principal">
+          <img src="premio2.webp" alt="Caixa">
+        </div>
+        <div class="dados">
+          <div class="linha-dado"><span class="icone">🏆</span><span><strong>Prêmio:</strong> Chaleira Elétrica 1,7L</span></div>
+          <div class="linha-dado"><span class="icone">📅</span><span><strong>Sorteio:</strong> 21/06/2026</span></div>
+          <div class="linha-dado"><span class="icone">⛪</span><span><strong>Local:</strong> Ig. Ass. de Deus 4 de Outubro</span></div>
+          <div class="linha-dado"><span class="icone">💰</span><span class="preco"><strong>Valor:</strong> R$ 2,00</span></div>
+        </div>
+      </div>
+      <div class="versiculo">
+        "Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14
+      </div>
+    </div>
+  </div>
+
+  <div class="cupom">
+    <div class="canhoto">
+      <div class="campo">Nome:<span class="linha"></span></div>
+      <div class="campo">Telefone:<span class="linha"></span></div>
+      <div class="campo">Vendedor:<span class="linha"></span></div>
+    </div>
+    <div class="info">
+      <div class="cabecalho">
+        <div class="titulo">Departamento Infantil</div>
+        <div class="subtitulo">Adoradores Kids</div>
+      </div>
+      <div class="corpo">
+        <div class="imagens">
+          <img src="premio1.webp" alt="Chaleira" class="principal">
+          <img src="premio2.webp" alt="Caixa">
+        </div>
+        <div class="dados">
+          <div class="linha-dado"><span class="icone">🏆</span><span><strong>Prêmio:</strong> Chaleira Elétrica 1,7L</span></div>
+          <div class="linha-dado"><span class="icone">📅</span><span><strong>Sorteio:</strong> 21/06/2026</span></div>
+          <div class="linha-dado"><span class="icone">⛪</span><span><strong>Local:</strong> Ig. Ass. de Deus 4 de Outubro</span></div>
+          <div class="linha-dado"><span class="icone">💰</span><span class="preco"><strong>Valor:</strong> R$ 2,00</span></div>
+        </div>
+      </div>
+      <div class="versiculo">
+        "Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14
+      </div>
+    </div>
+  </div>
+
+  <div class="cupom">
+    <div class="canhoto">
+      <div class="campo">Nome:<span class="linha"></span></div>
+      <div class="campo">Telefone:<span class="linha"></span></div>
+      <div class="campo">Vendedor:<span class="linha"></span></div>
+    </div>
+    <div class="info">
+      <div class="cabecalho">
+        <div class="titulo">Departamento Infantil</div>
+        <div class="subtitulo">Adoradores Kids</div>
+      </div>
+      <div class="corpo">
+        <div class="imagens">
+          <img src="premio1.webp" alt="Chaleira" class="principal">
+          <img src="premio2.webp" alt="Caixa">
+        </div>
+        <div class="dados">
+          <div class="linha-dado"><span class="icone">🏆</span><span><strong>Prêmio:</strong> Chaleira Elétrica 1,7L</span></div>
+          <div class="linha-dado"><span class="icone">📅</span><span><strong>Sorteio:</strong> 21/06/2026</span></div>
+          <div class="linha-dado"><span class="icone">⛪</span><span><strong>Local:</strong> Ig. Ass. de Deus 4 de Outubro</span></div>
+          <div class="linha-dado"><span class="icone">💰</span><span class="preco"><strong>Valor:</strong> R$ 2,00</span></div>
+        </div>
+      </div>
+      <div class="versiculo">
+        "Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
