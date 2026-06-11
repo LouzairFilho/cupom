@@ -157,6 +157,7 @@
   .scan-line button .ic{font-size:18px}
   .scan-line button:active{background:#f0ece2}
   .barcode-tag{font-size:11px;color:var(--muted);margin-top:-7px;margin-bottom:11px;font-family:var(--mono)}
+  .barcode-tag .searching{font-style:italic;opacity:.8}
   .sheet .save{width:100%;border:none;background:var(--green);color:#fff;border-radius:13px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px}
   .sheet .save:active{background:var(--green-dk)}
   .sheet .save:disabled{background:#cfd8d2}
@@ -385,20 +386,51 @@
   });
 
   /* prefill from catalog when a known barcode is scanned */
-  function applyBarcode(code){
+  async function applyBarcode(code){
     editingBarcode=code;
     $('barcodeTag').style.display='block';
-    $('barcodeTag').textContent='Código: '+code;
     var known=catalog[code];
     if(known){
+      $('barcodeTag').textContent='Código: '+code;
       $('fName').value=known.name;
       if(known.lastPrice) $('fPrice').value=(''+known.lastPrice).replace('.',',');
       toast('Produto reconhecido ✓');
       $('fPrice').focus();
+      return;
+    }
+    // não está no catálogo local -> tenta buscar o nome online
+    $('barcodeTag').innerHTML='Código: '+code+' · <span class="searching">buscando nome…</span>';
+    var name = await lookupProduct(code);
+    $('barcodeTag').textContent='Código: '+code;
+    if(name){
+      $('fName').value=name;
+      toast('Produto encontrado ✓');
+      $('fPrice').focus();
     } else {
-      toast('Produto novo — dê um nome');
+      toast('Não achei o nome — digite você');
       $('fName').focus();
     }
+  }
+
+  // Busca o nome do produto na Open Food Facts (gratuito, sem chave)
+  async function lookupProduct(code){
+    try{
+      var url='https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json?fields=product_name,product_name_pt,brands,quantity';
+      var ctrl = ('AbortController' in window) ? new AbortController() : null;
+      var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 6000) : null;
+      var res = await fetch(url, ctrl ? {signal:ctrl.signal} : {});
+      if(timer) clearTimeout(timer);
+      if(!res.ok) return null;
+      var data = await res.json();
+      if(data && data.status===1 && data.product){
+        var p=data.product;
+        var nm=((p.product_name_pt||p.product_name||'')+'').trim();
+        if(!nm) return null;
+        if(p.quantity && nm.toLowerCase().indexOf((''+p.quantity).toLowerCase())===-1){ nm = nm+' '+p.quantity; }
+        return nm;
+      }
+      return null;
+    }catch(e){ return null; }
   }
 
   /* ---------- scanner ---------- */
