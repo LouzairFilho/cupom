@@ -266,6 +266,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script>
 (function(){
   "use strict";
@@ -401,7 +402,7 @@
   }
 
   /* ---------- scanner ---------- */
-  var scanStream=null, scanRAF=null, detector=null;
+  var reader=null;
   $('btnScan').addEventListener('click',startScan);
   $('closeScan').addEventListener('click',stopScan);
   $('scanErrClose').addEventListener('click',function(){ stopScan(); $('fName').focus(); });
@@ -411,49 +412,53 @@
   async function startScan(){
     var sc=$('scanner');
     $('scanErr').style.display='none';
-    if(!('BarcodeDetector' in window)){
-      sc.classList.add('show');
-      showScanErr('Este navegador não tem leitor de código embutido.<br>Toque abaixo e digite os dados — funciona igual.');
+    sc.classList.add('show');
+
+    if(typeof ZXing==='undefined'){
+      showScanErr('Não consegui carregar o leitor de código (sem internet?). Recarregue com conexão, ou digite manualmente:');
       return;
     }
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-      sc.classList.add('show');
-      showScanErr('A câmera não está disponível neste navegador.<br>Toque abaixo para digitar.');
+      showScanErr('A câmera não está disponível neste navegador. Digite manualmente:');
       return;
     }
-    sc.classList.add('show');
-    try{
-      detector = detector || new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf']});
-      scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
-      var v=$('video'); v.srcObject=scanStream; await v.play();
-      detectLoop();
-    }catch(err){
-      var why = (err && err.name==='NotAllowedError')
-        ? 'Você precisa permitir o acesso à câmera. Se for a primeira vez, recarregue e toque em “Permitir”.'
-        : 'Aqui a câmera está bloqueada (comum no preview ou ao abrir o arquivo direto). No celular, abrindo o app por <b>https</b>, ela funciona.';
-      showScanErr(why+'<br>Por enquanto, digite manualmente:');
-    }
-  }
 
-  async function detectLoop(){
-    var v=$('video');
-    if(!scanStream){ return; }
     try{
-      var codes = await detector.detect(v);
-      if(codes && codes.length){
-        var code=codes[0].rawValue;
+      reader = new ZXing.BrowserMultiFormatReader();
+      var video=$('video');
+      var onResult=function(result){
+        if(!result) return;
+        var code = result.getText ? result.getText() : (result.text||'');
+        if(!code) return;
         if(navigator.vibrate) navigator.vibrate(60);
         stopScan();
         applyBarcode(code);
-        return;
+      };
+      var cb=function(result,err){ onResult(result); };
+
+      if(typeof reader.decodeFromConstraints==='function'){
+        await reader.decodeFromConstraints({audio:false,video:{facingMode:{ideal:'environment'}}}, video, cb);
+      } else {
+        await reader.decodeFromVideoDevice(undefined, video, cb);
       }
-    }catch(e){/* keep trying */}
-    scanRAF=requestAnimationFrame(detectLoop);
+    }catch(err){
+      var name = err && err.name ? err.name : '';
+      var msg;
+      if(name==='NotAllowedError' || name==='SecurityError'){
+        msg='Você precisa tocar em “Permitir” para a câmera. Se já bloqueou antes, abra as permissões do site no navegador e libere a câmera.';
+      } else if(name==='NotFoundError' || name==='OverconstrainedError'){
+        msg='Não encontrei a câmera traseira. Tente novamente ou digite manualmente.';
+      } else {
+        msg='Não consegui abrir a câmera ('+(name||'erro')+'). Digite manualmente:';
+      }
+      showScanErr(msg);
+    }
   }
 
   function stopScan(){
-    if(scanRAF){ cancelAnimationFrame(scanRAF); scanRAF=null; }
-    if(scanStream){ scanStream.getTracks().forEach(function(t){t.stop();}); scanStream=null; }
+    if(reader){ try{ reader.reset(); }catch(e){} reader=null; }
+    var v=$('video');
+    if(v && v.srcObject){ try{ v.srcObject.getTracks().forEach(function(t){t.stop();}); }catch(e){} v.srcObject=null; }
     $('scanner').classList.remove('show');
   }
 
