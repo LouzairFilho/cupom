@@ -2,367 +2,560 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Cupom - Departamento Infantil</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#137A4C">
+<title>Carrinho — controle de compras</title>
 <style>
-  @page {
-    size: A4 portrait;
-    margin: 10mm;
+  :root{
+    --paper:#FAF8F3;
+    --surface:#FFFFFF;
+    --ink:#1A1814;
+    --muted:#8A8478;
+    --line:#E6E1D6;
+    --green:#137A4C;
+    --green-dk:#0F6240;
+    --amber:#E0892B;
+    --danger:#C0392B;
+    --mono:'SF Mono','Roboto Mono','Menlo','Consolas',ui-monospace,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --safe-b:env(safe-area-inset-bottom,0px);
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f0f0f0;
-    padding: 20px;
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans);
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.45;
+    overflow:hidden;
   }
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 
-  .pagina {
-    width: 190mm;
-    margin: 0 auto;
-    background: white;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2mm;
-  }
+  .app{display:flex;flex-direction:column;height:100dvh;max-width:560px;margin:0 auto;position:relative;background:var(--paper)}
 
-  .cupom {
-    width: 100%;
-    height: 52mm;
-    border: 2px solid #2b3a8a;
-    display: flex;
-    overflow: hidden;
-    background: white;
-    position: relative;
-  }
+  /* Header */
+  header{padding:18px 18px 12px;display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--line)}
+  header .brand{font-weight:800;font-size:20px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+  header .brand b{color:var(--green)}
+  header .sub{font-size:12px;color:var(--muted);font-weight:600}
 
-  /* CANHOTO (esquerda) */
-  .canhoto {
-    width: 32%;
-    padding: 5mm 4mm;
-    border-right: 2px dashed #2b3a8a;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 3.5mm;
-    background:
-      repeating-linear-gradient(
-        45deg,
-        rgba(255, 220, 0, 0.04),
-        rgba(255, 220, 0, 0.04) 6px,
-        transparent 6px,
-        transparent 14px
-      );
-  }
+  main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .view{display:none;padding:14px 16px 20px}
+  .view.active{display:block}
 
-  .campo {
-    display: flex;
-    align-items: flex-end;
-    gap: 4px;
-    font-size: 11pt;
-    color: #2b3a8a;
-    font-weight: 600;
+  /* Cart */
+  .local-row{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .local-row input{
+    flex:1;border:1px solid var(--line);background:var(--surface);border-radius:12px;
+    padding:11px 13px;font-size:14px;font-family:var(--sans);color:var(--ink)
   }
+  .local-row input:focus{outline:none;border-color:var(--green)}
 
-  .campo .linha {
-    flex: 1;
-    border-bottom: 1.5px solid #2b3a8a;
-    height: 14px;
-  }
+  .receipt{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .receipt .empty{padding:46px 24px;text-align:center;color:var(--muted)}
+  .receipt .empty .big{font-size:40px;margin-bottom:8px}
+  .receipt .empty p{font-size:14px;max-width:240px;margin:0 auto;line-height:1.5}
 
-  /* CUPOM (direita) */
-  .info {
-    flex: 1;
-    padding: 4mm 5mm;
-    position: relative;
-    background:
-      radial-gradient(circle at top right, #fff4d6 0%, transparent 45%),
-      radial-gradient(circle at bottom left, #ffe6e6 0%, transparent 45%),
-      white;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
+  .item{padding:13px 14px;border-bottom:1px dashed var(--line);display:flex;align-items:center;gap:10px}
+  .item:last-child{border-bottom:none}
+  .item .info{flex:1;min-width:0}
+  .item .name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .item .meta .num{color:var(--ink)}
+  .item .line-total{font-size:15px;font-weight:700;white-space:nowrap}
+  .item .rm{border:none;background:none;color:var(--muted);font-size:20px;width:30px;height:30px;line-height:1;cursor:pointer;flex-shrink:0;border-radius:8px}
+  .item .rm:active{background:#f0ece2;color:var(--danger)}
 
-  /* decorações - estrelas e bolhas */
-  .info::before {
-    content: '★';
-    position: absolute;
-    top: 3mm;
-    right: 4mm;
-    color: #ffc107;
-    font-size: 16pt;
-    opacity: 0.5;
-  }
-  .info::after {
-    content: '★';
-    position: absolute;
-    bottom: 3mm;
-    left: 4mm;
-    color: #e74c3c;
-    font-size: 12pt;
-    opacity: 0.4;
-  }
+  .stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-top:6px}
+  .stepper button{border:none;background:var(--surface);width:30px;height:28px;font-size:17px;color:var(--green);cursor:pointer;font-weight:700}
+  .stepper button:active{background:#eef5f0}
+  .stepper .qv{min-width:38px;text-align:center;font-size:13px;font-weight:700;padding:0 2px}
 
-  .cabecalho {
-    text-align: center;
-    line-height: 1;
-    margin-bottom: 1mm;
+  .add-btn{
+    margin-top:14px;width:100%;border:1.5px dashed var(--green);color:var(--green);background:var(--surface);
+    border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px
   }
+  .add-btn:active{background:#eef5f0}
 
-  .titulo {
-    font-family: 'Comic Sans MS', 'Segoe Script', cursive;
-    font-size: 15pt;
-    color: #e63946;
-    font-weight: bold;
-    font-style: italic;
-    text-shadow: 1px 1px 0 rgba(0,0,0,0.06);
+  /* sticky total tape */
+  .tape{
+    border-top:1px solid var(--line);background:var(--surface);
+    padding:12px 16px calc(12px + var(--safe-b));
   }
-
-  .subtitulo {
-    font-family: 'Comic Sans MS', 'Segoe Script', cursive;
-    font-size: 10pt;
-    color: #2b78c2;
-    font-style: italic;
-    margin-top: 1mm;
+  .tape .row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+  .tape .row .lbl{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .tape .row .lbl small{display:block;text-transform:none;letter-spacing:0;color:var(--muted);font-weight:500;margin-top:1px}
+  .tape .total{font-size:30px;font-weight:800;color:var(--green-dk)}
+  .tape .finish{
+    width:100%;border:none;background:var(--green);color:#fff;border-radius:13px;padding:15px;font-size:16px;font-weight:700;cursor:pointer
   }
+  .tape .finish:disabled{background:#cfd8d2;color:#fff}
+  .tape .finish:active:not(:disabled){background:var(--green-dk)}
 
-  .corpo {
-    display: flex;
-    gap: 4mm;
-    align-items: center;
-    flex: 1;
-    margin-top: 1mm;
+  /* nav */
+  nav{display:flex;border-top:1px solid var(--line);background:var(--surface);padding-bottom:var(--safe-b)}
+  nav button{flex:1;border:none;background:none;padding:9px 0 11px;cursor:pointer;color:var(--muted);font-weight:600;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px}
+  nav button .ic{font-size:21px;line-height:1}
+  nav button.on{color:var(--green)}
+
+  /* history */
+  .trip{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:11px}
+  .trip .top{display:flex;justify-content:space-between;align-items:baseline;cursor:pointer}
+  .trip .top .when{font-weight:700;font-size:15px}
+  .trip .top .when small{display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:1px}
+  .trip .top .amt{font-size:18px;font-weight:800;color:var(--green-dk)}
+  .trip .detail{display:none;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+  .trip.open .detail{display:block}
+  .trip .detail .li{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:#3a352d}
+  .trip .detail .li .q{color:var(--muted)}
+  .trip .del{margin-top:10px;border:1px solid var(--line);background:none;color:var(--danger);border-radius:9px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer}
+
+  /* reports */
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .stat .k{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .stat .v{font-size:23px;font-weight:800;margin-top:5px;color:var(--ink)}
+  .stat.hl .v{color:var(--green-dk)}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:14px}
+  .card h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:14px}
+  .bars{display:flex;flex-direction:column;gap:10px}
+  .bar-row{display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:9px;font-size:12px}
+  .bar-row .m{color:var(--muted);font-weight:700;text-transform:capitalize}
+  .bar-track{height:14px;background:var(--paper);border-radius:7px;overflow:hidden}
+  .bar-fill{height:100%;background:var(--green);border-radius:7px;min-width:3px;transition:width .5s ease}
+  .bar-row .val{font-weight:700;white-space:nowrap}
+  .top-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
+  .top-item:last-child{border:none}
+  .top-item .ti-n{font-weight:600}
+  .top-item .ti-n small{color:var(--muted);font-weight:500;margin-left:6px}
+  .top-item .ti-v{font-weight:700}
+  .muted-empty{color:var(--muted);font-size:14px;text-align:center;padding:24px 0}
+
+  /* sheet (add item) */
+  .scrim{position:fixed;inset:0;background:rgba(26,24,20,.5);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .scrim.show{opacity:1;pointer-events:auto}
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);
+    border-radius:22px 22px 0 0;padding:8px 18px calc(20px + var(--safe-b));max-width:560px;margin:0 auto;
+    transform:translateY(110%);transition:transform .26s cubic-bezier(.2,.8,.2,1)
   }
-
-  .imagens {
-    display: flex;
-    gap: 2mm;
-    align-items: center;
-    flex-shrink: 0;
+  .sheet.show{transform:translateY(0)}
+  .sheet .grab{width:38px;height:4px;background:var(--line);border-radius:3px;margin:8px auto 14px}
+  .sheet h2{font-size:18px;font-weight:800;margin-bottom:14px}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+  .field input{
+    width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:16px;
+    font-family:var(--sans);color:var(--ink);background:var(--paper)
   }
+  .field input:focus{outline:none;border-color:var(--green);background:#fff}
+  .field input.num{font-family:var(--mono)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .scan-line{display:flex;gap:9px;margin-bottom:14px}
+  .scan-line button{flex:1;border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:7px}
+  .scan-line button .ic{font-size:18px}
+  .scan-line button:active{background:#f0ece2}
+  .barcode-tag{font-size:11px;color:var(--muted);margin-top:-7px;margin-bottom:11px;font-family:var(--mono)}
+  .sheet .save{width:100%;border:none;background:var(--green);color:#fff;border-radius:13px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px}
+  .sheet .save:active{background:var(--green-dk)}
+  .sheet .save:disabled{background:#cfd8d2}
 
-  .imagens img {
-    height: 22mm;
-    width: auto;
-    object-fit: contain;
-    border-radius: 4px;
-  }
+  /* scanner */
+  .scanner{position:fixed;inset:0;z-index:60;background:#000;display:none;flex-direction:column}
+  .scanner.show{display:flex}
+  .scanner video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+  .scanner .frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:74%;max-width:330px;height:160px;border:2px solid rgba(255,255,255,.9);border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.45)}
+  .scanner .laser{position:absolute;left:0;right:0;top:50%;height:2px;background:#41e08a;box-shadow:0 0 8px #41e08a;animation:scan 1.6s ease-in-out infinite}
+  @keyframes scan{0%,100%{top:18%}50%{top:82%}}
+  .scanner .hint{position:absolute;left:0;right:0;bottom:120px;text-align:center;color:#fff;font-size:14px;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,.6);padding:0 30px}
+  .scanner .x{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));right:18px;width:46px;height:46px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:24px;cursor:pointer;z-index:5}
+  .scanner .err{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:34px;background:#141414;color:#fff;text-align:center;font-size:15px;line-height:1.6}
+  .scanner .err button{border:none;background:var(--green);color:#fff;border-radius:13px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer}
+  .scanner .err button:active{background:var(--green-dk)}
 
-  .imagens img.principal { height: 24mm; }
+  .toast{position:fixed;left:50%;bottom:calc(96px + var(--safe-b));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-size:13px;font-weight:600;z-index:70;opacity:0;pointer-events:none;transition:.25s;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  .dados {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 1.2mm;
-    font-size: 9.5pt;
-    color: #333;
-  }
-
-  .linha-dado {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    line-height: 1.15;
-  }
-
-  .icone {
-    font-size: 11pt;
-    flex-shrink: 0;
-    width: 14px;
-    text-align: center;
-  }
-
-  .linha-dado strong {
-    color: #2b3a8a;
-  }
-
-  .preco {
-    color: #e63946;
-    font-weight: bold;
-    font-size: 11pt;
-  }
-
-  .versiculo {
-    font-style: italic;
-    font-size: 7.5pt;
-    color: #555;
-    text-align: center;
-    margin-top: 1.5mm;
-    line-height: 1.25;
-    border-top: 1px dotted #bbb;
-    padding-top: 1mm;
-    flex-shrink: 0;
-  }
-
-  /* IMPRESSÃO */
-  @media print {
-    body { background: white; padding: 0; }
-    .pagina {
-      width: 100%;
-      margin: 0;
-      gap: 2mm;
-    }
-    .cupom {
-      page-break-inside: avoid;
-      box-shadow: none;
-    }
-  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+<div class="app">
+  <header>
+    <div class="brand">🛒 Carri<b>nho</b></div>
+    <div class="sub" id="hdrSub">controle de compras</div>
+  </header>
 
-<div class="pagina">
+  <main>
+    <!-- COMPRAR -->
+    <section class="view active" id="view-cart">
+      <div class="local-row">
+        <input id="storeName" placeholder="Onde você está? (ex: Bretas, Atacadão...)" autocomplete="off">
+      </div>
+      <div class="receipt" id="cartList"></div>
+      <button class="add-btn" id="openAdd">＋ Adicionar item</button>
+    </section>
 
-  <!-- Modelo de cupom repetido 6 vezes -->
-  <div class="cupom">
-    <div class="canhoto">
-      <div class="campo">Nome:<span class="linha"></span></div>
-      <div class="campo">Telefone:<span class="linha"></span></div>
-      <div class="campo">Vendedor:<span class="linha"></span></div>
+    <!-- HISTÓRICO -->
+    <section class="view" id="view-history">
+      <div id="historyList"></div>
+    </section>
+
+    <!-- RELATÓRIOS -->
+    <section class="view" id="view-reports">
+      <div id="reportsBody"></div>
+    </section>
+  </main>
+
+  <!-- tape only on cart -->
+  <div class="tape" id="tape">
+    <div class="row">
+      <div class="lbl">Total<small id="itemCount">0 itens</small></div>
+      <div class="total num" id="cartTotal">R$ 0,00</div>
     </div>
-    <div class="info">
-      <div class="cabecalho">
-        <div class="titulo">Departamento Infantil</div>
-        <div class="subtitulo">Adoradores Kids</div>
-      </div>
-      <div class="corpo">
-        <div class="imagens">
-          <img src="premio1.webp" alt="Chaleira" class="principal">
-          <img src="premio2.webp" alt="Caixa">
-        </div>
-        <div class="dados">
-          <div class="linha-dado"><span class="icone">🏆</span><span><strong>Prêmio:</strong> Chaleira Elétrica 1,7L</span></div>
-          <div class="linha-dado"><span class="icone">📅</span><span><strong>Sorteio:</strong> 21/06/2026</span></div>
-          <div class="linha-dado"><span class="icone">⛪</span><span><strong>Local:</strong> Ig. Ass. de Deus 4 de Outubro</span></div>
-          <div class="linha-dado"><span class="icone">💰</span><span class="preco"><strong>Valor:</strong> R$ 2,00</span></div>
-        </div>
-      </div>
-      <div class="versiculo">
-        "Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14
-      </div>
-    </div>
+    <button class="finish" id="finishBtn" disabled>Finalizar compra</button>
   </div>
 
-  <div class="cupom">
-    <div class="canhoto">
-      <div class="campo">Nome:<span class="linha"></span></div>
-      <div class="campo">Telefone:<span class="linha"></span></div>
-      <div class="campo">Vendedor:<span class="linha"></span></div>
-    </div>
-    <div class="info">
-      <div class="cabecalho">
-        <div class="titulo">Departamento Infantil</div>
-        <div class="subtitulo">Adoradores Kids</div>
-      </div>
-      <div class="corpo">
-        <div class="imagens">
-          <img src="premio1.webp" alt="Chaleira" class="principal">
-          <img src="premio2.webp" alt="Caixa">
-        </div>
-        <div class="dados">
-          <div class="linha-dado"><span class="icone">🏆</span><span><strong>Prêmio:</strong> Chaleira Elétrica 1,7L</span></div>
-          <div class="linha-dado"><span class="icone">📅</span><span><strong>Sorteio:</strong> 21/06/2026</span></div>
-          <div class="linha-dado"><span class="icone">⛪</span><span><strong>Local:</strong> Ig. Ass. de Deus 4 de Outubro</span></div>
-          <div class="linha-dado"><span class="icone">💰</span><span class="preco"><strong>Valor:</strong> R$ 2,00</span></div>
-        </div>
-      </div>
-      <div class="versiculo">
-        "Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14
-      </div>
-    </div>
-  </div>
-
-  <div class="cupom">
-    <div class="canhoto">
-      <div class="campo">Nome:<span class="linha"></span></div>
-      <div class="campo">Telefone:<span class="linha"></span></div>
-      <div class="campo">Vendedor:<span class="linha"></span></div>
-    </div>
-    <div class="info">
-      <div class="cabecalho">
-        <div class="titulo">Departamento Infantil</div>
-        <div class="subtitulo">Adoradores Kids</div>
-      </div>
-      <div class="corpo">
-        <div class="imagens">
-          <img src="premio1.webp" alt="Chaleira" class="principal">
-          <img src="premio2.webp" alt="Caixa">
-        </div>
-        <div class="dados">
-          <div class="linha-dado"><span class="icone">🏆</span><span><strong>Prêmio:</strong> Chaleira Elétrica 1,7L</span></div>
-          <div class="linha-dado"><span class="icone">📅</span><span><strong>Sorteio:</strong> 21/06/2026</span></div>
-          <div class="linha-dado"><span class="icone">⛪</span><span><strong>Local:</strong> Ig. Ass. de Deus 4 de Outubro</span></div>
-          <div class="linha-dado"><span class="icone">💰</span><span class="preco"><strong>Valor:</strong> R$ 2,00</span></div>
-        </div>
-      </div>
-      <div class="versiculo">
-        "Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14
-      </div>
-    </div>
-  </div>
-
-  <div class="cupom">
-    <div class="canhoto">
-      <div class="campo">Nome:<span class="linha"></span></div>
-      <div class="campo">Telefone:<span class="linha"></span></div>
-      <div class="campo">Vendedor:<span class="linha"></span></div>
-    </div>
-    <div class="info">
-      <div class="cabecalho">
-        <div class="titulo">Departamento Infantil</div>
-        <div class="subtitulo">Adoradores Kids</div>
-      </div>
-      <div class="corpo">
-        <div class="imagens">
-          <img src="premio1.webp" alt="Chaleira" class="principal">
-          <img src="premio2.webp" alt="Caixa">
-        </div>
-        <div class="dados">
-          <div class="linha-dado"><span class="icone">🏆</span><span><strong>Prêmio:</strong> Chaleira Elétrica 1,7L</span></div>
-          <div class="linha-dado"><span class="icone">📅</span><span><strong>Sorteio:</strong> 21/06/2026</span></div>
-          <div class="linha-dado"><span class="icone">⛪</span><span><strong>Local:</strong> Ig. Ass. de Deus 4 de Outubro</span></div>
-          <div class="linha-dado"><span class="icone">💰</span><span class="preco"><strong>Valor:</strong> R$ 2,00</span></div>
-        </div>
-      </div>
-      <div class="versiculo">
-        "Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14
-      </div>
-    </div>
-  </div>
-
-  <div class="cupom">
-    <div class="canhoto">
-      <div class="campo">Nome:<span class="linha"></span></div>
-      <div class="campo">Telefone:<span class="linha"></span></div>
-      <div class="campo">Vendedor:<span class="linha"></span></div>
-    </div>
-    <div class="info">
-      <div class="cabecalho">
-        <div class="titulo">Departamento Infantil</div>
-        <div class="subtitulo">Adoradores Kids</div>
-      </div>
-      <div class="corpo">
-        <div class="imagens">
-          <img src="premio1.webp" alt="Chaleira" class="principal">
-          <img src="premio2.webp" alt="Caixa">
-        </div>
-        <div class="dados">
-          <div class="linha-dado"><span class="icone">🏆</span><span><strong>Prêmio:</strong> Chaleira Elétrica 1,7L</span></div>
-          <div class="linha-dado"><span class="icone">📅</span><span><strong>Sorteio:</strong> 21/06/2026</span></div>
-          <div class="linha-dado"><span class="icone">⛪</span><span><strong>Local:</strong> Ig. Ass. de Deus 4 de Outubro</span></div>
-          <div class="linha-dado"><span class="icone">💰</span><span class="preco"><strong>Valor:</strong> R$ 2,00</span></div>
-        </div>
-      </div>
-      <div class="versiculo">
-        "Deixai vir a mim os pequeninos, e não os impeçais; porque dos tais é o Reino de Deus." Marcos 10:14
-      </div>
-    </div>
-  </div>
-
+  <nav>
+    <button class="on" data-view="cart"><span class="ic">🛒</span>Comprar</button>
+    <button data-view="history"><span class="ic">🧾</span>Histórico</button>
+    <button data-view="reports"><span class="ic">📊</span>Relatórios</button>
+  </nav>
 </div>
 
+<!-- ADD ITEM SHEET -->
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <h2 id="sheetTitle">Adicionar item</h2>
+  <div class="scan-line">
+    <button id="btnScan"><span class="ic">📷</span> Escanear código</button>
+    <button id="btnNoCode"><span class="ic">✏️</span> Sem código</button>
+  </div>
+  <div class="barcode-tag" id="barcodeTag" style="display:none"></div>
+  <div class="field">
+    <label for="fName">Produto</label>
+    <input id="fName" placeholder="Ex: Arroz 5kg" autocomplete="off">
+  </div>
+  <div class="two">
+    <div class="field">
+      <label for="fPrice">Preço (un.)</label>
+      <input id="fPrice" class="num" inputmode="decimal" placeholder="0,00">
+    </div>
+    <div class="field">
+      <label for="fQty">Quantidade</label>
+      <input id="fQty" class="num" inputmode="decimal" value="1">
+    </div>
+  </div>
+  <button class="save" id="saveItem">Adicionar ao carrinho</button>
+</div>
+
+<!-- SCANNER -->
+<div class="scanner" id="scanner">
+  <video id="video" playsinline muted></video>
+  <div class="frame"></div>
+  <div class="laser"></div>
+  <div class="hint">Aponte para o código de barras</div>
+  <button class="x" id="closeScan">✕</button>
+  <div class="err" id="scanErr" style="display:none">
+    <p id="scanErrMsg"></p>
+    <button id="scanErrClose">✏️ Digitar manualmente</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- storage with in-memory fallback (preview-safe) ---------- */
+  var mem = {};
+  var store = {
+    get:function(k,def){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch(e){ return (k in mem)?mem[k]:def; } },
+    set:function(k,val){ try{ localStorage.setItem(k,JSON.stringify(val)); }catch(e){ mem[k]=val; } }
+  };
+
+  /* ---------- state ---------- */
+  var catalog = store.get('cn_catalog', {});   // { barcode: {name, lastPrice} }
+  var cart    = store.get('cn_cart', {store:'', items:[]});
+  var trips   = store.get('cn_trips', []);      // [{id,date,store,items,total}]
+  var editingBarcode = null;
+
+  /* ---------- helpers ---------- */
+  var BRL = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+  function money(n){ return BRL.format(n||0); }
+  function parseNum(s){ if(s==null) return 0; s=(''+s).replace(/\s/g,'').replace(/\./g,'').replace(',','.'); var n=parseFloat(s); return isNaN(n)?0:n; }
+  function parseQty(s){ if(s==null) return 0; s=(''+s).replace(',','.'); var n=parseFloat(s); return isNaN(n)?0:n; }
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+  function qtyLabel(q){ return Number.isInteger(q)? q : q.toString().replace('.',','); }
+  var $ = function(id){ return document.getElementById(id); };
+  function save(){ store.set('cn_catalog',catalog); store.set('cn_cart',cart); store.set('cn_trips',trips); }
+
+  var toastT;
+  function toast(msg){ var t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('show');},1800); }
+
+  /* ---------- cart render ---------- */
+  function cartTotal(){ return cart.items.reduce(function(s,i){return s+i.price*i.qty;},0); }
+
+  function renderCart(){
+    var list=$('cartList');
+    if(!cart.items.length){
+      list.innerHTML='<div class="empty"><div class="big">🛒</div><p>Carrinho vazio. Toque em <b>Adicionar item</b> e comece a escanear ou digitar.</p></div>';
+    } else {
+      list.innerHTML = cart.items.map(function(i){
+        return '<div class="item" data-id="'+i.id+'">'+
+          '<div class="info">'+
+            '<div class="name">'+escapeHtml(i.name)+'</div>'+
+            '<div class="meta"><span class="num">'+money(i.price)+'</span> / un'+
+              '<div class="stepper">'+
+                '<button data-act="dec">–</button>'+
+                '<span class="qv num">'+qtyLabel(i.qty)+'</span>'+
+                '<button data-act="inc">＋</button>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="line-total num">'+money(i.price*i.qty)+'</div>'+
+          '<button class="rm" data-act="rm">×</button>'+
+        '</div>';
+      }).join('');
+    }
+    var total=cartTotal();
+    $('cartTotal').textContent=money(total);
+    var n=cart.items.reduce(function(s,i){return s+i.qty;},0);
+    $('itemCount').textContent=(Number.isInteger(n)?n:n.toFixed(1).replace('.',','))+' '+(n===1?'item':'itens');
+    $('finishBtn').disabled = cart.items.length===0;
+  }
+
+  function escapeHtml(s){ return (''+s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  $('cartList').addEventListener('click',function(e){
+    var btn=e.target.closest('[data-act]'); if(!btn) return;
+    var row=e.target.closest('.item'); var id=row.getAttribute('data-id');
+    var it=cart.items.find(function(x){return x.id===id;}); if(!it) return;
+    var act=btn.getAttribute('data-act');
+    if(act==='inc') it.qty=Math.round((it.qty+1)*1000)/1000;
+    else if(act==='dec'){ it.qty=Math.round((it.qty-1)*1000)/1000; if(it.qty<=0){ cart.items=cart.items.filter(function(x){return x.id!==id;}); } }
+    else if(act==='rm'){ cart.items=cart.items.filter(function(x){return x.id!==id;}); }
+    save(); renderCart();
+  });
+
+  $('storeName').value=cart.store||'';
+  $('storeName').addEventListener('input',function(){ cart.store=this.value; save(); });
+
+  /* ---------- finalizar ---------- */
+  $('finishBtn').addEventListener('click',function(){
+    if(!cart.items.length) return;
+    var total=cartTotal();
+    if(!confirm('Finalizar compra de '+money(total)+'?\nEla vai pro histórico e o carrinho será esvaziado.')) return;
+    trips.unshift({ id:uid(), date:new Date().toISOString(), store:(cart.store||'').trim(), items:cart.items.slice(), total:total });
+    cart={store:'',items:[]};
+    $('storeName').value='';
+    save(); renderCart(); renderHistory(); renderReports();
+    toast('Compra salva no histórico ✓');
+    switchView('history');
+  });
+
+  /* ---------- add item sheet ---------- */
+  function openSheet(){
+    editingBarcode=null;
+    $('barcodeTag').style.display='none';
+    $('fName').value=''; $('fPrice').value=''; $('fQty').value='1';
+    $('sheetTitle').textContent='Adicionar item';
+    $('scrim').classList.add('show'); $('sheet').classList.add('show');
+  }
+  function closeSheet(){ $('scrim').classList.remove('show'); $('sheet').classList.remove('show'); }
+
+  $('openAdd').addEventListener('click',openSheet);
+  $('scrim').addEventListener('click',closeSheet);
+  $('btnNoCode').addEventListener('click',function(){ $('fName').focus(); });
+
+  $('saveItem').addEventListener('click',function(){
+    var name=$('fName').value.trim();
+    var price=parseNum($('fPrice').value);
+    var qty=parseQty($('fQty').value);
+    if(!name){ toast('Dê um nome ao produto'); $('fName').focus(); return; }
+    if(qty<=0){ toast('Quantidade inválida'); $('fQty').focus(); return; }
+    cart.items.push({ id:uid(), barcode:editingBarcode, name:name, price:price, qty:qty });
+    if(editingBarcode){ catalog[editingBarcode]={name:name,lastPrice:price}; }
+    save(); renderCart(); closeSheet();
+    toast(name+' adicionado');
+  });
+
+  /* prefill from catalog when a known barcode is scanned */
+  function applyBarcode(code){
+    editingBarcode=code;
+    $('barcodeTag').style.display='block';
+    $('barcodeTag').textContent='Código: '+code;
+    var known=catalog[code];
+    if(known){
+      $('fName').value=known.name;
+      if(known.lastPrice) $('fPrice').value=(''+known.lastPrice).replace('.',',');
+      toast('Produto reconhecido ✓');
+      $('fPrice').focus();
+    } else {
+      toast('Produto novo — dê um nome');
+      $('fName').focus();
+    }
+  }
+
+  /* ---------- scanner ---------- */
+  var reader=null;
+  $('btnScan').addEventListener('click',startScan);
+  $('closeScan').addEventListener('click',stopScan);
+  $('scanErrClose').addEventListener('click',function(){ stopScan(); $('fName').focus(); });
+
+  function showScanErr(html){ $('scanErrMsg').innerHTML=html; $('scanErr').style.display='flex'; }
+
+  async function startScan(){
+    var sc=$('scanner');
+    $('scanErr').style.display='none';
+    sc.classList.add('show');
+
+    if(typeof ZXing==='undefined'){
+      showScanErr('Não consegui carregar o leitor de código (sem internet?). Recarregue com conexão, ou digite manualmente:');
+      return;
+    }
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      showScanErr('A câmera não está disponível neste navegador. Digite manualmente:');
+      return;
+    }
+
+    try{
+      reader = new ZXing.BrowserMultiFormatReader();
+      var video=$('video');
+      var onResult=function(result){
+        if(!result) return;
+        var code = result.getText ? result.getText() : (result.text||'');
+        if(!code) return;
+        if(navigator.vibrate) navigator.vibrate(60);
+        stopScan();
+        applyBarcode(code);
+      };
+      var cb=function(result,err){ onResult(result); };
+
+      if(typeof reader.decodeFromConstraints==='function'){
+        await reader.decodeFromConstraints({audio:false,video:{facingMode:{ideal:'environment'}}}, video, cb);
+      } else {
+        await reader.decodeFromVideoDevice(undefined, video, cb);
+      }
+    }catch(err){
+      var name = err && err.name ? err.name : '';
+      var msg;
+      if(name==='NotAllowedError' || name==='SecurityError'){
+        msg='Você precisa tocar em “Permitir” para a câmera. Se já bloqueou antes, abra as permissões do site no navegador e libere a câmera.';
+      } else if(name==='NotFoundError' || name==='OverconstrainedError'){
+        msg='Não encontrei a câmera traseira. Tente novamente ou digite manualmente.';
+      } else {
+        msg='Não consegui abrir a câmera ('+(name||'erro')+'). Digite manualmente:';
+      }
+      showScanErr(msg);
+    }
+  }
+
+  function stopScan(){
+    if(reader){ try{ reader.reset(); }catch(e){} reader=null; }
+    var v=$('video');
+    if(v && v.srcObject){ try{ v.srcObject.getTracks().forEach(function(t){t.stop();}); }catch(e){} v.srcObject=null; }
+    $('scanner').classList.remove('show');
+  }
+
+  /* ---------- history ---------- */
+  function fmtDate(iso){
+    var d=new Date(iso);
+    var dd=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    var hh=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    return {dd:dd, hh:hh, full:d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})};
+  }
+  function renderHistory(){
+    var box=$('historyList');
+    if(!trips.length){ box.innerHTML='<div class="muted-empty">Nenhuma compra finalizada ainda.<br>Quando você fechar um carrinho, ela aparece aqui.</div>'; return; }
+    box.innerHTML=trips.map(function(t){
+      var f=fmtDate(t.date);
+      var det=t.items.map(function(i){
+        return '<div class="li"><span>'+escapeHtml(i.name)+' <span class="q">×'+qtyLabel(i.qty)+'</span></span><span class="num">'+money(i.price*i.qty)+'</span></div>';
+      }).join('');
+      return '<div class="trip" data-id="'+t.id+'">'+
+        '<div class="top">'+
+          '<div class="when">'+(t.store?escapeHtml(t.store):'Compra')+'<small>'+f.dd+' · '+f.hh+' · '+t.items.length+' itens</small></div>'+
+          '<div class="amt num">'+money(t.total)+'</div>'+
+        '</div>'+
+        '<div class="detail">'+det+'<button class="del" data-del="'+t.id+'">Excluir compra</button></div>'+
+      '</div>';
+    }).join('');
+  }
+  $('historyList').addEventListener('click',function(e){
+    var del=e.target.closest('[data-del]');
+    if(del){ e.stopPropagation(); var id=del.getAttribute('data-del');
+      if(confirm('Excluir esta compra do histórico?')){ trips=trips.filter(function(t){return t.id!==id;}); save(); renderHistory(); renderReports(); }
+      return;
+    }
+    var trip=e.target.closest('.trip'); if(trip) trip.classList.toggle('open');
+  });
+
+  /* ---------- reports ---------- */
+  function monthKey(iso){ var d=new Date(iso); return d.getFullYear()+'-'+(d.getMonth()+1); }
+  function monthLabel(d){ return d.toLocaleDateString('pt-BR',{month:'short'}).replace('.',''); }
+
+  function renderReports(){
+    var body=$('reportsBody');
+    if(!trips.length){ body.innerHTML='<div class="muted-empty">Os relatórios aparecem depois da sua primeira compra finalizada.</div>'; return; }
+
+    var now=new Date();
+    var thisKey=now.getFullYear()+'-'+(now.getMonth()+1);
+    var monthSpend=0, monthTrips=0;
+    trips.forEach(function(t){ if(monthKey(t.date)===thisKey){ monthSpend+=t.total; monthTrips++; } });
+    var grand=trips.reduce(function(s,t){return s+t.total;},0);
+    var avg=grand/trips.length;
+
+    // last 6 months
+    var months=[];
+    for(var i=5;i>=0;i--){ var d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({key:d.getFullYear()+'-'+(d.getMonth()+1),label:monthLabel(d),val:0}); }
+    trips.forEach(function(t){ var k=monthKey(t.date); var m=months.find(function(x){return x.key===k;}); if(m) m.val+=t.total; });
+    var maxV=Math.max.apply(null,months.map(function(m){return m.val;}).concat([1]));
+
+    // top items
+    var agg={};
+    trips.forEach(function(t){ t.items.forEach(function(i){ var k=i.name.toLowerCase().trim(); if(!agg[k]) agg[k]={name:i.name,total:0,qty:0}; agg[k].total+=i.price*i.qty; agg[k].qty+=i.qty; }); });
+    var top=Object.keys(agg).map(function(k){return agg[k];}).sort(function(a,b){return b.total-a.total;}).slice(0,6);
+
+    var barsHtml=months.map(function(m){
+      var w=Math.round(m.val/maxV*100);
+      return '<div class="bar-row"><span class="m">'+m.label+'</span><div class="bar-track"><div class="bar-fill" style="width:'+w+'%"></div></div><span class="val num">'+(m.val?money(m.val):'—')+'</span></div>';
+    }).join('');
+
+    var topHtml=top.map(function(t){
+      return '<div class="top-item"><span class="ti-n">'+escapeHtml(t.name)+'<small>×'+qtyLabel(t.qty)+'</small></span><span class="ti-v num">'+money(t.total)+'</span></div>';
+    }).join('');
+
+    body.innerHTML=
+      '<div class="stats">'+
+        '<div class="stat hl"><div class="k">Gasto este mês</div><div class="v num">'+money(monthSpend)+'</div></div>'+
+        '<div class="stat"><div class="k">Compras no mês</div><div class="v num">'+monthTrips+'</div></div>'+
+        '<div class="stat"><div class="k">Média por compra</div><div class="v num">'+money(avg)+'</div></div>'+
+        '<div class="stat"><div class="k">Total geral</div><div class="v num">'+money(grand)+'</div></div>'+
+      '</div>'+
+      '<div class="card"><h3>Gasto por mês</h3><div class="bars">'+barsHtml+'</div></div>'+
+      '<div class="card"><h3>Itens que mais pesam</h3>'+topHtml+'</div>';
+  }
+
+  /* ---------- nav ---------- */
+  function switchView(v){
+    document.querySelectorAll('.view').forEach(function(s){s.classList.remove('active');});
+    $('view-'+v).classList.add('active');
+    document.querySelectorAll('nav button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-view')===v); });
+    $('tape').style.display = (v==='cart')?'block':'none';
+    $('hdrSub').textContent = v==='cart'?'controle de compras':(v==='history'?'suas compras':'seus números');
+  }
+  document.querySelectorAll('nav button').forEach(function(b){
+    b.addEventListener('click',function(){ switchView(b.getAttribute('data-view')); });
+  });
+
+  /* ---------- init ---------- */
+  renderCart(); renderHistory(); renderReports();
+})();
+</script>
 </body>
 </html>
